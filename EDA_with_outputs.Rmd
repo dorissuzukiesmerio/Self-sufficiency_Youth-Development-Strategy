@@ -1,0 +1,152 @@
+---
+title: "EDA - Looking at the data"
+output: html_notebook
+---
+
+Pasting my script so that it can be displayed with the output
+
+```{r, echo=TRUE}
+# Exploration and initial ideas:
+
+# Load data ----
+
+library(readxl)
+library(dplyr)
+
+scores_un <- read_xlsx("Data/panel_case_data_DS_II_2023.xlsx", sheet = "SCORES BY CHILD - unpivot")
+scores_piv <- read_xlsx("Data/panel_case_data_DS_II_2023.xlsx", sheet = "SCORES BY CHILD")
+
+regions <- read_xlsx("Data/panel_case_data_DS_II_2023.xlsx", sheet = "REGIONS & BASES")
+var_names_tbl <- read_xlsx("Data/panel_case_data_DS_II_2023.xlsx", sheet = "VARIABLE NAMES")
+
+
+## Renaming for ease: ----
+
+# This is a bit more intuitive for me
+scores_un_renamed <- scores_un %>% rename(
+    math_adv_score = EDU_ICAN_ADVANCED,
+    math_basic = EDU_ICAN_FOUNDNUM,
+    reading_drop = EDU_MICS_LIT_ENDED,
+    reading_understanding = EDU_MICS_LIT_FOUND,
+    participated_tvet = EDU_NF_TVET_PART,
+    is_enrolled_school = EDU_PIE_IN_SCHOOL,
+    received_certification = EDU_PIE_TVET_CERT,
+    is_enrolled_tvet = EDU_PIE_TVET_PART,
+    thinking_score = EDU_SOFT_HOTS_AVG,
+    communication_score = EDU_SOFT_SCS_AVG,
+    is_working = EDU_WORK_EMPLOY_YES,
+    not_s_w_t = EDU_WORK_NEET,
+    is_working_field = EDU_WORK_TVETCONN,
+    )
+````
+# EDA ----
+
+# Profiling with the DataExplorer package
+
+```{r, eval=FALSE}
+library(DataExplorer)
+
+# No need to run again. Outputs are in the Output folder
+scores_piv %>%
+    create_report(
+        output_file = "profile_report_unpivoted_data",
+        output_dir = "Outputs/",
+        y = "SCORE",
+        report_title = "EDA for Students Self-Sufficiency scores - pivoted data"
+    )
+
+scores_un_renamed %>%
+    create_report(
+        output_file = "profile_report_pivoted_data",
+        output_dir = "Outputs/",
+        y = "is_working",
+        report_title = "EDA for Students Self-Sufficiency scores - unpivoted data"
+    )
+```
+
+
+
+
+### Initial reactions(thinking out loud): ----
+
+1) Missing data
+a) Reason?
+Are certain regions not collecting certain data ? Why is there so much missing data?
+Or it may be according to age group ? May take a look and also talk
+I think I should break by age group, as the variables seem to be more relevant per age group (e.g. working)
+Comments after investigating: Yes, the main reason is because certain variables are only relevant for certain age groups.
+b) Dealing with it
+Also, there might be values that may be imputed, such as obs where they are working in the field and so, they are also working. (is_working_field, is_working)
+Such as
+There are certain variables that are related to each other.
+2) Breaking down:
+Visualizing by region may be useful
+
+# Disaggregate by age group for profiling ----
+
+```{r}
+scores_un_renamed %>% select(AGE_GROUP) %>% unique() # Getting the age groups
+
+```
+
+
+```{r, echo=FALSE}
+# Ages 19+
+scores_un_renamed_19up <- scores_un_renamed %>% 
+    filter(AGE_GROUP == "19+") 
+# Ages 15-18
+scores_un_renamed_15_18 <- scores_un_renamed %>% 
+    filter(AGE_GROUP == "15-18") 
+# Ages 12-14
+scores_un_renamed_12_14 <- scores_un_renamed %>% 
+    filter(AGE_GROUP == "12-14") 
+# Ages 9-11
+scores_un_renamed_9_11 <- scores_un_renamed %>% 
+    filter(AGE_GROUP == "9-11") 
+# Ages 6-8
+scores_un_renamed_6_8 <- scores_un_renamed %>% 
+    filter(AGE_GROUP == "6-8") 
+```
+
+
+
+# SKIMR ----
+
+```{r}
+library(skimr)
+skim(scores_un_renamed_19up) 
+```
+
+Ok, so I found out that reading_understanding, math_basic, reading_drop and math_adv_score are not captured for this age group. Which makes total sense. 
+
+```{r}
+skim(scores_un_renamed_15_18)
+```
+
+Lower rates of completion are the participated_tvet, is_working_field (which is dep in tvet* check), and received_certification 
+ 
+```{r}
+skim(scores_un_renamed_12_14) 
+```
+ 
+Same as 15_18
+
+```{r}
+skim(scores_un_renamed_9_11)
+```
+
+No data for not_s_w_t , participated_tvet, is_enrolled_tvet, is_working, is_working_field, received_certification, communication_score, thinking_score
+
+```{r}
+skim(scores_un_renamed_6_8)
+```
+Solely has data for is_enrolled_school. And 99.7% of them are.
+
+# Jotting down some insights/thoughts/ideas:
+Can compare reading_understanding with EGRA scores for East Africa ?
+
+
+Ok, I think it is time to wrap up this EDA file and start the outputs in the analysis.
+There are more things I'd love to explore, such as if using factor analysis may be relevant, as well as some clustering and statistical tests. But I think I better first get a good descriptive picture with the interpretable ones.
+I also think it is relevant to include data from East Africa to contextualize the findings. If I have time, I will.
+

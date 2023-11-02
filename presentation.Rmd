@@ -1,0 +1,29 @@
+---
+title: "Self-sufficiency - Youth Development Strategy - Wakanda"
+author: "Doris Suzuki Esmerio"
+date: "November 2, 2023"
+output: powerpoint_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(readxl)
+scores_un_renamed <- read_xlsx("Data/scores_un_renamed.xlsx", sheet = 1)
+
+```
+
+## Introduction
+
+
+
+## What are the ages
+
+```{r, echo = TRUE}
+
+library(DT)
+scores_un_renamed %>% 
+    head() %>% 
+    datatable()
+
+```
+
